@@ -119,6 +119,10 @@ async function run() {
     console.log('✅ Tous les tests API ont réussi.');
   } catch (err) {
     console.error('❌', err.message);
+    if (err.message.includes('404')) {
+      console.error('\n   → Redéployez (npm run deploy ou git push) puis attendez la fin du build.');
+      console.error('   → Vercel > Project Settings > General : Framework Preset = Other (pas Next.js).');
+    }
     process.exit(1);
   }
 }
