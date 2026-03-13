@@ -138,6 +138,8 @@ npm run env:sync
 
 Cela met à jour `.env.example` avec les noms des nouvelles clés, puis pousse toutes les variables vers Vercel (production + development). Une seule commande pour tout synchroniser.
 
+**Automatisation** : un hook Git **pre-push** exécute `env:sync` avant chaque `git push` (installé via `npm run prepare` au premier `npm install`). Pour pousser sans lancer la synchro : `git push --no-verify`.
+
 ```bash
 # Variante : pousser vers Vercel uniquement (sans toucher à .env.example)
 npm run env:push

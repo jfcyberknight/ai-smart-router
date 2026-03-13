@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel --prod",
+    "prepare": "node scripts/install-git-hooks.js",
     "env:push": "node scripts/vercel-env-push.js",
     "env:sync": "node scripts/env-sync.js",
     "test": "node scripts/test-providers.js",
