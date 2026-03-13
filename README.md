@@ -22,7 +22,7 @@ API unique sur **Vercel** que toutes vos applications peuvent appeler. Elle rout
    ```
 
 3. Configurer les variables d’environnement dans **Vercel** :  
-   Remplir `.env` puis lancer `npm run env:push` pour pousser les clés vers Vercel. Prérequis : **vercel login** puis **vercel link** (une fois par dépôt). Sinon, définir les variables à la main : **Project → Settings → Environment Variables**.
+   Remplir `.env` puis lancer **`npm run env:sync`** pour synchroniser partout (Vercel + mise à jour de `.env.example`). Alternative : `npm run env:push` pour Vercel uniquement. Prérequis : **vercel login** puis **vercel link** (une fois par dépôt). Sinon, définir les variables à la main : **Project → Settings → Environment Variables**.
    - `GEMINI_API_KEY` — [Créer une clé](https://aistudio.google.com/apikey)
    - `GROQ_API_KEY` — [Créer une clé](https://console.groq.com/keys)
 
@@ -99,10 +99,16 @@ Ou avec l’URL de ton déploiement : `node scripts/test-api.js https://ton-proj
 
 ## Injection des clés API vers Vercel (script)
 
-Le script `scripts/vercel-env-push.js` lit ton fichier `.env` et pousse **toutes** les variables (valeur non vide) vers Vercel, sauf `NODE_ENV`, `DEBUG`, `VERCEL`, `CI`.
+**Commande à utiliser après avoir ajouté une clé dans `.env` :**
 
 ```bash
-# Par défaut : lit .env et pousse vers production, preview, development
+npm run env:sync
+```
+
+Cela met à jour `.env.example` avec les noms des nouvelles clés, puis pousse toutes les variables vers Vercel (production + development). Une seule commande pour tout synchroniser.
+
+```bash
+# Variante : pousser vers Vercel uniquement (sans toucher à .env.example)
 npm run env:push
 
 # Fichier personnalisé
