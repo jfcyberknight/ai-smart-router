@@ -126,6 +126,12 @@ npm run test:api
 
 Ou avec l’URL de ton déploiement : `node scripts/test-api.js https://ton-projet.vercel.app`
 
+**Test de l’API déployée (health + chat)** depuis le repo :
+```bash
+npm run test:api:prod
+```
+Par défaut cible `https://ai-smart-router.vercel.app`. Pour une autre URL : `node scripts/test-api-deployed.js https://ton-projet.vercel.app` ou définir `API_BASE_URL` dans `.env`.
+
 Équivalent en curl : `curl -X POST http://localhost:3000/api/chat -H "Content-Type: application/json" -d "{\"messages\":[{\"role\":\"user\",\"content\":\"Dis bonjour\"}]}"`
 
 ## Injection des clés API vers Vercel (script)
