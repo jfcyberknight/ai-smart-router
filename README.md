@@ -10,6 +10,7 @@ ai-smart-router/
 │   ├── chat.js             # POST /api/chat — routage IA
 │   └── health.js           # GET /api/health
 ├── lib/
+│   ├── auth.js             # Vérification API_SECRET (accès restreint)
 │   ├── router.js           # Ordre des providers et fallback
 │   └── providers/
 │       ├── gemini.js       # Provider Gemini
@@ -18,7 +19,8 @@ ai-smart-router/
 │   ├── vercel-env-push.js  # Pousse .env vers Vercel
 │   ├── env-sync.js         # Sync .env → .env.example + Vercel
 │   ├── test-providers.js   # Test local des providers
-│   └── test-api.js         # Test HTTP /api/chat
+│   ├── test-api.js         # Test HTTP /api/chat
+│   └── generate-api-secret.py  # Génère une clé API_SECRET
 ├── .env.example            # Modèle des variables (sans valeurs)
 ├── vercel.json             # Config déploiement Vercel
 ├── package.json
@@ -51,17 +53,18 @@ ai-smart-router/
 
 3. Configurer les variables d’environnement dans **Vercel** :  
    Remplir `.env` puis lancer **`npm run env:sync`** pour synchroniser partout (Vercel + mise à jour de `.env.example`). Alternative : `npm run env:push` pour Vercel uniquement. Prérequis : **vercel login** puis **vercel link** (une fois par dépôt). Sinon, définir les variables à la main : **Project → Settings → Environment Variables**.
-   - `GEMINI_API_KEY` — [Créer une clé](https://aistudio.google.com/apikey)
+   - **`API_SECRET`** — Secret pour restreindre l’accès (toi uniquement). Min. 8 caractères. Sans lui, toutes les requêtes reçoivent 401. Pour en générer une : `python scripts/generate-api-secret.py` (ou `py -3 scripts/generate-api-secret.py` sous Windows).
+   - `GEMINI_API_KEY` — [Créer une clé](https://aistudio.google.com/apikey) (API REST avec `X-goog-api-key`, modèle `gemini-flash-latest`)
    - `GROQ_API_KEY` — [Créer une clé](https://console.groq.com/keys)
 
-   Au moins **une** des deux doit être définie.
+   **API_SECRET** est obligatoire. Au moins **une** clé de provider (Gemini ou Groq) doit être définie.
 
 ## Utilisation de l’API
 
 **URL** : `https://votre-projet.vercel.app/api/chat`
 
 **Méthode** : `POST`  
-**Headers** : `Content-Type: application/json`
+**Headers** : `Content-Type: application/json` + **`Authorization: Bearer <API_SECRET>`** (ou `X-API-Key: <API_SECRET>`). Sans cette clé, l’API renvoie 401.
 
 **Body (format type OpenAI)** :
 ```json

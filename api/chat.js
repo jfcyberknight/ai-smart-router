@@ -1,18 +1,22 @@
 const { routeChat } = require('../lib/router');
+const { checkApiSecret } = require('../lib/auth');
 
 /**
  * POST /api/chat
+ * Header requis : Authorization: Bearer <API_SECRET> ou X-API-Key: <API_SECRET>
  * Body: { messages: [{ role: "user"|"assistant"|"system", content: string }], models?: { gemini?: string, groq?: string } }
  * Réponse: { content: string, provider: string, model: string }
  */
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
+
+  if (!checkApiSecret(req, res)) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée. Utilisez POST.' });

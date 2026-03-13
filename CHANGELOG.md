@@ -4,7 +4,11 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 
 ## [Unreleased]
 
+### Changed
+- **Gemini** : passage à l’API REST (`X-goog-api-key`, modèle `gemini-flash-latest`) à la place du SDK ; suppression de la dépendance `@google/generative-ai`.
+
 ### Added
+- Protection par clé API (**API_SECRET**) : accès restreint à l’API. Seules les requêtes avec `Authorization: Bearer <API_SECRET>` ou `X-API-Key: <API_SECRET>` sont acceptées. `/api/chat` et `/api/health` protégés. `lib/auth.js` + doc dans README et `.env.example`.
 - Application des standards **prompt-ai** (Gardien du README + Architecte Documentation) : structure du projet documentée, CHANGELOG Keep a Changelog.
 
 ### Changed
