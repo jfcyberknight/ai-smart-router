@@ -1,4 +1,5 @@
 const { checkApiSecret } = require('../lib/auth');
+const { PROVIDERS } = require('../lib/router');
 
 /**
  * GET /api/health
@@ -14,6 +15,6 @@ module.exports = async (req, res) => {
   res.status(200).json({
     ok: true,
     service: 'ai-smart-router',
-    providers: ['gemini', 'groq'],
+    providers: PROVIDERS.map((p) => p.id),
   });
 };
