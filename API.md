@@ -149,6 +149,18 @@ Les requêtes **OPTIONS** sont acceptées et renvoient **204** sans body.
 
 ---
 
+## Sécurité
+
+- **Authentification** : comparaison constant-time du token (réduction des attaques par timing).
+- **En-têtes de réponse** : `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection`, `Referrer-Policy`, `Cache-Control: no-store`.
+- **POST /api/chat** :
+  - Body brut limité à 256 Ko (réponse **413** si dépassement).
+  - `messages` : max 50 messages, rôles autorisés `user` / `assistant` / `system`, contenu max 64 Ko par message.
+  - Au moins un message `user` non vide requis.
+  - Clés `models` (overrides) validées (chaînes, max 200 caractères par modèle).
+
+---
+
 ## Ordre des providers (fallback)
 
 En cas d’échec (quota, 5xx, etc.), le router essaie le provider suivant dans cet ordre :
