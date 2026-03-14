@@ -94,7 +94,77 @@ curl -X POST "https://votre-projet.vercel.app/api/chat" \
 
 ---
 
-### 2. GET `/api/health` (et `GET /`)
+### 2. POST `/api/normalize`
+
+Extraction de données structurées : envoie un texte libre et reçoit un JSON normalisé (id, statut, donnees, message). Utilise le même router IA que `/api/chat` avec un prompt d’extraction dédié. **Protégé** par `API_SECRET`.
+
+#### Requête
+
+| Élément   | Détail |
+|----------|--------|
+| **Méthode** | `POST` |
+| **Content-Type** | `application/json` |
+| **Headers** | `Authorization: Bearer <API_SECRET>` ou `X-API-Key: <API_SECRET>` |
+
+**Body (JSON)** :
+
+```json
+{
+  "text": "L'utilisateur Jean Dupont a fini son test avec 85% aujourd'hui le 13 mars 2026."
+}
+```
+
+| Champ | Type | Obligatoire | Description |
+|-------|------|-------------|-------------|
+| `text` | `string` | Oui | Texte à analyser (max 32 Ko). |
+
+#### Réponse succès (200)
+
+Objet JSON normalisé (exemple) :
+
+```json
+{
+  "id": "USR-001",
+  "statut": "actif",
+  "donnees": {
+    "nom": "Jean Dupont",
+    "score": 85,
+    "date_iso": "2026-03-13"
+  },
+  "message": "Test terminé avec succès"
+}
+```
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `id` | `string` \| `null` | Identifiant unique si trouvé. |
+| `statut` | `string` | `"actif"` \| `"inactif"` \| `"erreur"`. |
+| `donnees` | `object` | `nom`, `score` (number 0–100), `date_iso` (YYYY-MM-DD). Valeurs manquantes → `null`. |
+| `message` | `string` \| `null` | Résumé court. |
+
+#### Réponses d’erreur
+
+| Code | Signification |
+|------|----------------|
+| **400** | Body invalide ou champ `text` absent. |
+| **401** | Clé API manquante ou invalide. |
+| **405** | Méthode autre que POST. |
+| **413** | Texte trop long. |
+| **422** | Le modèle n’a pas renvoyé un JSON valide. |
+| **500** / **502** | Erreur routeur ou providers. |
+
+#### Exemple cURL
+
+```bash
+curl -X POST "https://votre-projet.vercel.app/api/normalize" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer VOTRE_API_SECRET" \
+  -d '{"text":"L'\''utilisateur Jean Dupont a fini son test avec 85% aujourd'\''hui le 13 mars 2026."}'
+```
+
+---
+
+### 3. GET `/api/health` (et `GET /`)
 
 Vérification de l’état du service et liste des providers configurés. La racine **`GET /`** est réécrite vers `/api/health` (même réponse, évite un 404). **Public** : aucune authentification requise (sondes, monitoring, load balancers).
 
@@ -140,7 +210,7 @@ curl -X GET "https://votre-projet.vercel.app/api/health"
 ## CORS
 
 - **Access-Control-Allow-Origin** : `*`
-- **Access-Control-Allow-Methods** : selon l’endpoint (GET pour `/api/health`, POST pour `/api/chat`).
+- **Access-Control-Allow-Methods** : selon l’endpoint (GET pour `/api/health`, POST pour `/api/chat` et `/api/normalize`).
 - **Access-Control-Allow-Headers** : `Content-Type`, `Authorization`, `X-API-Key`.
 
 Les requêtes **OPTIONS** sont acceptées et renvoient **204** sans body.

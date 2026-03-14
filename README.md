@@ -8,6 +8,7 @@ API unique sur **Vercel** que toutes vos applications peuvent appeler. Elle rout
 ai-smart-router/
 ├── api/                    # Endpoints Vercel (serverless)
 │   ├── chat.js             # POST /api/chat — routage IA
+│   ├── normalize.js        # POST /api/normalize — extraction JSON (texte → schéma)
 │   └── health.js           # GET /api/health
 ├── lib/
 │   ├── auth.js             # Vérification API_SECRET (accès restreint)
@@ -34,7 +35,7 @@ ai-smart-router/
 
 ## Fonctionnement
 
-1. **Un seul endpoint** : `POST /api/chat`
+1. **Endpoints** : `POST /api/chat` (conversation IA), `POST /api/normalize` (texte → JSON structuré)
 2. **Ordre des providers** : tiré aléatoirement à chaque requête (répartition du quota), puis fallback sur le suivant en cas d’échec.
 3. Si un provider renvoie 429 / 500 / 503 ou dépasse son quota, le router essaie le suivant dans cet ordre.
 
