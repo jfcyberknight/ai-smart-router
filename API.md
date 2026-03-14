@@ -6,6 +6,23 @@ Documentation des endpoints exposés par l’API (Vercel serverless).
 
 ---
 
+## Format normalisé des réponses (envelope)
+
+Toutes les réponses JSON (succès ou erreur) respectent le même format :
+
+| Clé | Type | Description |
+|-----|------|-------------|
+| `id` | `string` \| `null` | Identifiant de la requête (corrélation, logs). |
+| `statut` | `string` | `"actif"` (succès), `"inactif"` (vide/désactivé), `"erreur"` (échec). |
+| `donnees` | `object` \| `array` \| `null` | Payload métier (spécifique à la route) ; `null` en cas d’erreur. |
+| `message` | `string` | Résumé court ou message d’erreur lisible. |
+
+- **2xx** : en général `statut: "actif"`, `donnees` contient le résultat.
+- **4xx / 5xx** : `statut: "erreur"`, `donnees: null`, `message` explicite.
+- Côté client : valider avec un schéma (JSON Schema), toujours gérer `statut: "erreur"`.
+
+---
+
 ## Authentification
 
 Les endpoints **protégés** (ex. `POST /api/chat`) exigent un secret partagé. **`GET /` et `GET /api/health` sont publics** (pas d’auth, pour sondes et monitoring).
@@ -15,7 +32,7 @@ Les endpoints **protégés** (ex. `POST /api/chat`) exigent un secret partagé. 
   - `Authorization: Bearer <API_SECRET>`
   - `X-API-Key: <API_SECRET>`
 
-Si la clé est absente ou invalide sur un endpoint protégé, la réponse est **401** avec un body JSON `{ "error": "…" }`.
+Si la clé est absente ou invalide sur un endpoint protégé, la réponse est **401** au format envelope : `statut: "erreur"`, `donnees: null`, `message: "…"`.
 
 ---
 
@@ -61,27 +78,31 @@ Envoie une conversation au router IA. Un provider est choisi aléatoirement parm
 
 ```json
 {
-  "content": "Réponse générée par le modèle.",
-  "provider": "gemini",
-  "model": "gemini-flash-latest"
+  "id": "req-a1b2c3d4",
+  "statut": "actif",
+  "donnees": {
+    "content": "Réponse générée par le modèle.",
+    "provider": "gemini",
+    "model": "gemini-flash-latest"
+  },
+  "message": "Réponse générée"
 }
 ```
 
 | Champ | Type | Description |
 |-------|------|-------------|
-| `content` | `string` | Réponse texte du modèle. |
-| `provider` | `string` | Provider utilisé : `gemini`, `groq`, `nvapi`, `deepseek`, `openrouter`. |
-| `model` | `string` | Modèle effectivement utilisé. |
+| `donnees.content` | `string` | Réponse texte du modèle. |
+| `donnees.provider` | `string` | Provider utilisé : `gemini`, `groq`, `nvapi`, `deepseek`, `openrouter`. |
+| `donnees.model` | `string` | Modèle effectivement utilisé. |
 
 #### Réponses d’erreur
 
 | Code | Signification |
 |------|----------------|
-| **400** | Body JSON invalide ou `messages` absent/vide. `{ "error": "…" }` |
+| **400** | Body JSON invalide ou `messages` absent/vide. Envelope : `statut: "erreur"`, `message: "…"`. |
 | **401** | Clé API manquante ou invalide. |
 | **405** | Méthode autre que POST. |
-| **500** | Erreur côté routeur (ex. tous les providers ont échoué). `{ "error": "…" }` |
-| **502** | Tous les providers ont échoué (message d’erreur dans `error`). |
+| **500** / **502** | Erreur routeur ou providers. Envelope : `statut: "erreur"`, `donnees: null`, `message: "…"`. |
 
 #### Exemple cURL
 
@@ -120,27 +141,29 @@ Extraction de données structurées : envoie un texte libre et reçoit un JSON n
 
 #### Réponse succès (200)
 
-Objet JSON normalisé (exemple) :
+Envelope commun avec l’objet extrait dans `donnees` (exemple) :
 
 ```json
 {
-  "id": "USR-001",
+  "id": "req-a1b2c3d4",
   "statut": "actif",
   "donnees": {
-    "nom": "Jean Dupont",
-    "score": 85,
-    "date_iso": "2026-03-13"
+    "id": "USR-001",
+    "statut": "actif",
+    "donnees": {
+      "nom": "Jean Dupont",
+      "score": 85,
+      "date_iso": "2026-03-13"
+    },
+    "message": "Test terminé avec succès"
   },
-  "message": "Test terminé avec succès"
+  "message": "Données extraites"
 }
 ```
 
 | Champ | Type | Description |
 |-------|------|-------------|
-| `id` | `string` \| `null` | Identifiant unique si trouvé. |
-| `statut` | `string` | `"actif"` \| `"inactif"` \| `"erreur"`. |
-| `donnees` | `object` | `nom`, `score` (number 0–100), `date_iso` (YYYY-MM-DD). Valeurs manquantes → `null`. |
-| `message` | `string` \| `null` | Résumé court. |
+| `donnees` | `object` | Objet extrait du texte (schéma : id, statut, donnees.nom / score / date_iso, message). |
 
 #### Réponses d’erreur
 
@@ -181,23 +204,28 @@ Pas de body.
 
 ```json
 {
-  "ok": true,
-  "service": "ai-smart-router",
-  "providers": ["gemini", "groq", "nvapi", "deepseek", "openrouter"]
+  "id": "req-e5f6g7h8",
+  "statut": "actif",
+  "donnees": {
+    "ok": true,
+    "service": "ai-smart-router",
+    "providers": ["gemini", "groq", "nvapi", "deepseek", "openrouter"]
+  },
+  "message": "Service opérationnel"
 }
 ```
 
 | Champ | Type | Description |
 |-------|------|-------------|
-| `ok` | `boolean` | Toujours `true` en 200. |
-| `service` | `string` | Nom du service. |
-| `providers` | `string[]` | Liste des providers enregistrés dans le router. |
+| `donnees.ok` | `boolean` | Toujours `true` en 200. |
+| `donnees.service` | `string` | Nom du service. |
+| `donnees.providers` | `string[]` | Liste des providers enregistrés dans le router. |
 
 #### Réponses d’erreur
 
 | Code | Signification |
 |------|----------------|
-| **405** | Méthode autre que GET. |
+| **405** | Méthode autre que GET. Envelope : `statut: "erreur"`, `message: "…"`. |
 
 #### Exemple cURL
 

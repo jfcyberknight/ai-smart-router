@@ -11,6 +11,7 @@ ai-smart-router/
 │   ├── normalize.js        # POST /api/normalize — extraction JSON (texte → schéma)
 │   └── health.js           # GET /api/health
 ├── lib/
+│   ├── api-response.js     # Envelope commun (id, statut, donnees, message)
 │   ├── auth.js             # Vérification API_SECRET (accès restreint)
 │   ├── router.js           # Ordre des providers et fallback
 │   └── providers/

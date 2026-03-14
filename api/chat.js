@@ -1,6 +1,7 @@
 const { routeChat } = require('../lib/router');
 const { checkApiSecret } = require('../lib/auth');
 const { applySecurityHeaders } = require('../lib/security-headers');
+const { sendSuccess, sendError } = require('../lib/api-response');
 const {
   validateBodySize,
   validateMessages,
@@ -10,8 +11,8 @@ const {
 /**
  * POST /api/chat
  * Header requis : Authorization: Bearer <API_SECRET> ou X-API-Key: <API_SECRET>
- * Body: { messages: [{ role: "user"|"assistant"|"system", content: string }], models?: { gemini?: string, ... } }
- * Réponse: { content: string, provider: string, model: string }
+ * Body: { messages: [...], models?: {...} }
+ * Réponse au format envelope commun (id, statut, donnees: { content, provider, model }, message).
  */
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -26,26 +27,26 @@ module.exports = async (req, res) => {
   if (!checkApiSecret(req, res)) return;
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Méthode non autorisée. Utilisez POST.' });
+    return sendError(res, 'Méthode non autorisée. Utilisez POST.', 405);
   }
 
   const rawBody = typeof req.body === 'string' ? req.body : (req.body && JSON.stringify(req.body)) || '';
   const sizeCheck = validateBodySize(rawBody);
   if (!sizeCheck.ok) {
-    return res.status(413).json({ error: sizeCheck.error });
+    return sendError(res, sizeCheck.error, 413);
   }
 
   let body;
   try {
     body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
   } catch {
-    return res.status(400).json({ error: 'Body JSON invalide.' });
+    return sendError(res, 'Body JSON invalide.', 400);
   }
 
   const { messages, models: modelOverrides } = body;
   const msgValidation = validateMessages(messages);
   if (!msgValidation.ok) {
-    return res.status(400).json({ error: msgValidation.error });
+    return sendError(res, msgValidation.error, 400);
   }
   const modelOverridesValid = validateModelOverrides(modelOverrides);
 
@@ -54,16 +55,18 @@ module.exports = async (req, res) => {
       messages: msgValidation.messages,
       modelOverrides: modelOverridesValid,
     });
-    return res.status(200).json({
-      content: result.text,
-      provider: result.provider,
-      model: result.model,
-    });
+    return sendSuccess(
+      res,
+      {
+        content: result.text,
+        provider: result.provider,
+        model: result.model,
+      },
+      'Réponse générée'
+    );
   } catch (err) {
     console.error('[api/chat]', err.message);
     const status = err.status || (err.message?.includes('échoué') ? 502 : 500);
-    return res.status(status).json({
-      error: err.message || 'Erreur lors du routage vers les APIs IA.',
-    });
+    return sendError(res, err.message || 'Erreur lors du routage vers les APIs IA.', status);
   }
 };

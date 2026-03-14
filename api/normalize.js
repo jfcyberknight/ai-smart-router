@@ -1,6 +1,7 @@
 const { routeChat } = require('../lib/router');
 const { checkApiSecret } = require('../lib/auth');
 const { applySecurityHeaders } = require('../lib/security-headers');
+const { sendSuccess, sendError } = require('../lib/api-response');
 
 const MAX_TEXT_LENGTH = 32 * 1024; // 32 KB
 
@@ -75,7 +76,7 @@ L'utilisateur Jean Dupont a fini son test avec 85% aujourd'hui le 13 mars 2026.
 /**
  * POST /api/normalize
  * Body: { "text": "texte à analyser" }
- * Réponse: objet JSON normalisé (id, statut, donnees, message).
+ * Réponse au format envelope commun (id, statut, donnees: objet extrait, message).
  * Protégé par API_SECRET.
  */
 module.exports = async (req, res) => {
@@ -91,22 +92,22 @@ module.exports = async (req, res) => {
   if (!checkApiSecret(req, res)) return;
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Méthode non autorisée. Utilisez POST.' });
+    return sendError(res, 'Méthode non autorisée. Utilisez POST.', 405);
   }
 
   let body;
   try {
     body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
   } catch {
-    return res.status(400).json({ error: 'Body JSON invalide.' });
+    return sendError(res, 'Body JSON invalide.', 400);
   }
 
   const text = typeof body.text === 'string' ? body.text.trim() : '';
   if (!text) {
-    return res.status(400).json({ error: 'Le champ "text" (string) est requis.' });
+    return sendError(res, 'Le champ "text" (string) est requis.', 400);
   }
   if (text.length > MAX_TEXT_LENGTH) {
-    return res.status(413).json({ error: 'Texte trop long.' });
+    return sendError(res, 'Texte trop long.', 413);
   }
 
   const messages = [
@@ -117,19 +118,16 @@ module.exports = async (req, res) => {
   try {
     const result = await routeChat({ messages });
     let raw = (result.text || '').trim();
-    // Retirer éventuel bloc markdown ```json ... ```
     const jsonMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) raw = jsonMatch[1].trim();
     const data = JSON.parse(raw);
-    return res.status(200).json(data);
+    return sendSuccess(res, data, 'Données extraites');
   } catch (err) {
     if (err instanceof SyntaxError) {
-      return res.status(422).json({ error: 'Réponse du modèle non valide (JSON invalide).' });
+      return sendError(res, 'Réponse du modèle non valide (JSON invalide).', 422);
     }
     console.error('[api/normalize]', err.message);
     const status = err.status || (err.message?.includes('échoué') ? 502 : 500);
-    return res.status(status).json({
-      error: err.message || 'Erreur lors de l\'extraction.',
-    });
+    return sendError(res, err.message || 'Erreur lors de l\'extraction.', status);
   }
 };

@@ -59,12 +59,12 @@ async function testHealth() {
     throw new Error(`Health: réponse non-JSON (${res.status}) ${text.slice(0, 100)}`);
   }
   if (!res.ok) {
-    throw new Error(`Health ${res.status}: ${data.error || text}`);
+    throw new Error(`Health ${res.status}: ${data.message || text}`);
   }
-  if (data.ok !== true || !Array.isArray(data.providers)) {
-    throw new Error(`Health: format invalide (ok, providers attendus): ${JSON.stringify(data)}`);
+  if (data.statut !== 'actif' || !data.donnees || data.donnees.ok !== true || !Array.isArray(data.donnees.providers)) {
+    throw new Error(`Health: format invalide (envelope statut/donnees attendu): ${JSON.stringify(data)}`);
   }
-  return data;
+  return data.donnees;
 }
 
 async function testChat() {
@@ -89,12 +89,13 @@ async function testChat() {
     throw new Error(`Chat: réponse non-JSON (${res.status}) ${text.slice(0, 100)}`);
   }
   if (!res.ok) {
-    throw new Error(`Chat ${res.status}: ${data.error || text}`);
+    throw new Error(`Chat ${res.status}: ${data.message || text}`);
   }
-  if (typeof data.content !== 'string' || !data.provider || !data.model) {
+  const payload = data.donnees || {};
+  if (data.statut !== 'actif' || typeof payload.content !== 'string' || !payload.provider || !payload.model) {
     throw new Error(`Chat: format invalide (content, provider, model attendus): ${JSON.stringify(Object.keys(data))}`);
   }
-  return data;
+  return payload;
 }
 
 async function run() {

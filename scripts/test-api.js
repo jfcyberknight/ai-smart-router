@@ -159,13 +159,14 @@ async function run() {
       process.exit(1);
     }
     if (!res.ok) {
-      console.log('❌ Erreur', res.status, data.error || data);
+      console.log('❌ Erreur', res.status, data.message || data);
       process.exit(1);
     }
+    const payload = data.donnees || {};
     console.log('✅ Statut:', res.status);
-    console.log('   Provider:', data.provider);
-    console.log('   Modèle:', data.model);
-    console.log('   Réponse:', (data.content || '').trim().slice(0, 200) + (data.content?.length > 200 ? '…' : ''));
+    console.log('   Provider:', payload.provider);
+    console.log('   Modèle:', payload.model);
+    console.log('   Réponse:', (payload.content || '').trim().slice(0, 200) + ((payload.content || '').length > 200 ? '…' : ''));
   } catch (e) {
     console.error('❌', e.message);
     if (e.cause?.code === 'ECONNREFUSED') {
