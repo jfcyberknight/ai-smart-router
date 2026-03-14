@@ -23,7 +23,7 @@ Si la clé est absente ou invalide, les réponses sont en **401** avec un body J
 
 ### 1. POST `/api/chat`
 
-Envoie une conversation au router IA. Le premier provider disponible (dans l’ordre de fallback) traite la requête.
+Envoie une conversation au router IA. Un provider est choisi aléatoirement parmi ceux configurés ; en cas d’échec, le suivant dans l’ordre tiré est utilisé (fallback).
 
 #### Requête
 
@@ -161,14 +161,10 @@ Les requêtes **OPTIONS** sont acceptées et renvoient **204** sans body.
 
 ---
 
-## Ordre des providers (fallback)
+## Ordre des providers (répartition aléatoire + fallback)
 
-En cas d’échec (quota, 5xx, etc.), le router essaie le provider suivant dans cet ordre :
+À **chaque requête**, l’ordre des providers est **tiré aléatoirement** parmi ceux qui ont une clé configurée. Ainsi le quota est réparti entre tous les providers au lieu de surcharger toujours le premier.
 
-1. **gemini**
-2. **groq**
-3. **nvapi** (NVIDIA NIM)
-4. **deepseek**
-5. **openrouter**
+En cas d’échec (quota 429, 5xx, etc.), le router essaie le provider **suivant dans cet ordre aléatoire**.
 
-Les providers sans clé API configurée dans l’environnement sont ignorés.
+Providers possibles : **gemini**, **groq**, **nvapi** (NVIDIA NIM), **deepseek**, **openrouter**. Ceux sans clé API dans l’environnement sont ignorés.

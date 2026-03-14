@@ -1,6 +1,6 @@
 # AI Smart Router (API Vercel)
 
-API unique sur **Vercel** que toutes vos applications peuvent appeler. Elle route les requêtes vers les APIs IA disponibles (Gemini → Groq → autres) avec **fallback automatique** en cas d’erreur ou de quota.
+API unique sur **Vercel** que toutes vos applications peuvent appeler. Elle route les requêtes vers les APIs IA disponibles : **ordre aléatoire** à chaque requête (pour répartir le quota) et **fallback automatique** vers le suivant en cas d’erreur ou de quota.
 
 ## Structure du projet
 
@@ -35,8 +35,8 @@ ai-smart-router/
 ## Fonctionnement
 
 1. **Un seul endpoint** : `POST /api/chat`
-2. **Ordre des providers** : Gemini (priorité) → Groq → (autres à ajouter)
-3. Si un provider renvoie 429 / 500 / 503 ou dépasse son quota, le router essaie le suivant.
+2. **Ordre des providers** : tiré aléatoirement à chaque requête (répartition du quota), puis fallback sur le suivant en cas d’échec.
+3. Si un provider renvoie 429 / 500 / 503 ou dépasse son quota, le router essaie le suivant dans cet ordre.
 
 ## Déploiement sur Vercel
 
