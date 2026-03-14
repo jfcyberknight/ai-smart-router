@@ -94,9 +94,9 @@ curl -X POST "https://votre-projet.vercel.app/api/chat" \
 
 ---
 
-### 2. GET `/api/health`
+### 2. GET `/api/health` (et `GET /`)
 
-Vérification de l’état du service et liste des providers configurés.
+Vérification de l’état du service et liste des providers configurés. La racine **`GET /`** est réécrite vers `/api/health` (même réponse, évite un 404).
 
 #### Requête
 

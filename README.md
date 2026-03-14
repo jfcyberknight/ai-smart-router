@@ -22,7 +22,7 @@ ai-smart-router/
 │   ├── test-api.js         # Test HTTP /api/chat
 │   └── generate-api-secret.py  # Génère une clé API_SECRET
 ├── .env.example            # Modèle des variables (sans valeurs)
-├── (pas de vercel.json)    # Zero-config : dossier api/ détecté automatiquement
+├── vercel.json             # Rewrite / → /api/health (évite 404 à la racine)
 ├── package.json
 ├── CHANGELOG.md            # Historique des versions (Keep a Changelog)
 └── README.md               # Ce fichier
