@@ -34,8 +34,23 @@ if ($Production) {
     Write-Info "Deploiement Vercel : non lance (preview/prod via Git). -Production pour forcer la prod."
 }
 
-# --- Etape 0 : Sync .env.preview vers Vercel (preview) + .env.example
-Write-EtapeHeader -Numero 0 -Titre "Sync env (preview)" -Pourquoi "Pousser .env.preview vers Vercel (preview) et mettre a jour .env.example."
+# --- Etape 0 : Branche sur origin (push si pas encore poussee, pour que Vercel trouve la branche preview)
+Write-EtapeHeader -Numero 0 -Titre "Branche sur origin" -Pourquoi "Pousser la branche vers origin si elle n'existe pas encore (evite branch_not_found sur Vercel)."
+$RemoteRef = git ls-remote --heads origin $CurrentBranch 2>$null
+if (-not $RemoteRef) {
+    Write-Step "git push -u origin $CurrentBranch (premiere fois)..."
+    git push -u origin $CurrentBranch
+    if ($LASTEXITCODE -ne 0) {
+        Write-Fail "Push de la branche vers origin a echoue."
+        exit 1
+    }
+    Write-Success "Branche $CurrentBranch poussee vers origin."
+} else {
+    Write-Info "Branche $CurrentBranch deja sur origin."
+}
+
+# --- Etape 1 : Sync .env.preview vers Vercel (preview) + .env.example
+Write-EtapeHeader -Numero 1 -Titre "Sync env (preview)" -Pourquoi "Pousser .env.preview vers Vercel (preview) et mettre a jour .env.example."
 Write-Step "npm run env:sync..."
 npm run env:sync
 if ($LASTEXITCODE -ne 0) {
@@ -44,8 +59,8 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Success "Sync terminee."
 
-# --- Etape 1 : Git (add, commit, push)
-Write-EtapeHeader -Numero 1 -Titre "Git" -Pourquoi "Enregistrer les changements et pousser vers l'origine (pre-push lance env:sync)."
+# --- Etape 2 : Git (add, commit, push)
+Write-EtapeHeader -Numero 2 -Titre "Git" -Pourquoi "Enregistrer les changements et pousser vers l'origine (pre-push lance env:sync)."
 Write-Step "git add -A..."
 git add -A
 Write-Step "git commit..."
@@ -65,14 +80,14 @@ if ($CommitFailed) {
     }
 }
 
-# --- Etape 2 : Deploiement Vercel (optionnel)
+# --- Etape 3 : Deploiement Vercel (optionnel)
 $DeployFailed = $false
 $DeployMode = if ($Production) { "prod" } else { "none" }
 if ($DeployMode -eq "none") {
-    Write-EtapeHeader -Numero 2 -Titre "Deploiement" -Pourquoi "Non lance. Preview/prod via Git. -Production pour forcer vercel --prod."
-    Write-Info "Etape 2 ignoree."
+    Write-EtapeHeader -Numero 3 -Titre "Deploiement" -Pourquoi "Non lance. Preview/prod via Git. -Production pour forcer vercel --prod."
+    Write-Info "Etape 3 ignoree."
 } else {
-    Write-EtapeHeader -Numero 2 -Titre "Deploiement production" -Pourquoi "vercel --prod."
+    Write-EtapeHeader -Numero 3 -Titre "Deploiement production" -Pourquoi "vercel --prod."
     Write-Step "npx vercel --prod --yes..."
     npx vercel --prod --yes
     $DeployFailed = ($LASTEXITCODE -ne 0)
@@ -83,8 +98,8 @@ if ($DeployMode -eq "none") {
     }
 }
 
-# --- Etape 3 : Tests API déployée
-Write-EtapeHeader -Numero 3 -Titre "Tests API déployée" -Pourquoi "Verifier health + chat sur l'URL déployée (.env.preview)."
+# --- Etape 4 : Tests API déployée
+Write-EtapeHeader -Numero 4 -Titre "Tests API déployée" -Pourquoi "Verifier health + chat sur l'URL déployée (.env.preview)."
 Write-Step "npm run test:api:prod..."
 npm run test:api:prod
 $TestsFailed = ($LASTEXITCODE -ne 0)
